@@ -8,11 +8,11 @@ require_once 'db_connect.php';
 // Fetch user details from session for display.
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
-// Fetch All Raw Materials with the new code_color column
+
+// --- FIX: REMOVED THE JOIN ON THE NON-EXISTENT 'categories' TABLE ---
 $raw_materials_sql = "
-    SELECT rm.id, rm.name, rm.code_color, c.name as category, rm.stock_quantity, l.name as location, rm.status, rm.image1, rm.image2, rm.image3
+    SELECT rm.id, rm.name, rm.code_color, rm.stock_quantity, l.name as location, rm.status, rm.image1, rm.image2, rm.image3, rm.location_id
     FROM raw_materials rm
-    LEFT JOIN categories c ON rm.category_id = c.id
     LEFT JOIN locations l ON rm.location_id = l.id
     ORDER BY rm.id";
 $raw_materials_result = $conn->query($raw_materials_sql);
@@ -137,7 +137,7 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                                             . " data-image1='" . htmlspecialchars($row['image1'] ?? '') . "'"
                                             . " data-image2='" . htmlspecialchars($row['image2'] ?? '') . "'"
                                             . " data-image3='" . htmlspecialchars($row['image3'] ?? '') . "'"
-                                            . " data-location-id='" . htmlspecialchars(isset($row['location_id']) ? $row['location_id'] : '') . "'"
+                                            . " data-location-id='" . htmlspecialchars($row['location_id'] ?? '') . "'"
                                             . ">";
                                         echo "<td>" . $count++ . "</td>";
                                         echo "<td>" . htmlspecialchars($row['name']) . "</td>";
@@ -181,13 +181,15 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Initial Stock Quantity</label>
-                        <input type="number" class="form-input" name="stock_quantity" placeholder="Enter quantity" min="0" required>
+                        <input type="number" step="0.01" class="form-input" name="stock_quantity" placeholder="Enter quantity" min="0" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Location</label>
                         <select class="form-input" name="location_id" required>
                             <option value="">Select Location</option>
-                            <?php while ($row = $locations_result->fetch_assoc()): ?>
+                            <?php 
+                            $locations_result->data_seek(0);
+                            while ($row = $locations_result->fetch_assoc()): ?>
                                 <option value="<?= htmlspecialchars($row['id']) ?>"><?= htmlspecialchars($row['name']) ?></option>
                             <?php endwhile; ?>
                         </select>
@@ -222,13 +224,13 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 <div class="form-header"><h2 class="form-title">Raw Material Details</h2></div>
                 <div class="slider-container"><div class="slider" id="rawMaterialImageSlider"></div><div class="slider-controls"><button class="slider-btn" id="prevRawImage"><i class="fa-solid fa-chevron-left"></i></button><button class="slider-btn" id="nextRawImage"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Material Name</label><p id="rawMaterialName" class="form-input" style="border:none; background:none;"></p></div>
-                    <div class="form-group"><label class="form-label">Material Code</label><p id="rawMaterialCode" class="form-input" style="border:none; background:none;"></p></div>
+                    <div class="form-group"><label class="form-label">Material Name</label><p id="viewRawMaterialName" class="form-input" style="border:none; background:none;"></p></div>
+                    <div class="form-group"><label class="form-label">Material Code</label><p id="viewRawMaterialCode" class="form-input" style="border:none; background:none;"></p></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Stock</label><p id="rawMaterialStock" class="form-input" style="border:none; background:none;"></p></div>
-                    <div class="form-group"><label class="form-label">Location</label><p id="rawMaterialLocation" class="form-input" style="border:none; background:none;"></p></div>
-                    <div class="form-group"><label class="form-label">Status</label><p id="rawMaterialStatus" class="form-input" style="border:none; background:none;"></p></div>
+                    <div class="form-group"><label class="form-label">Stock</label><p id="viewRawMaterialStock" class="form-input" style="border:none; background:none;"></p></div>
+                    <div class="form-group"><label class="form-label">Location</label><p id="viewRawMaterialLocation" class="form-input" style="border:none; background:none;"></p></div>
+                    <div class="form-group"><label class="form-label">Status</label><p id="viewRawMaterialStatus" class="form-input" style="border:none; background:none;"></p></div>
                 </div>
             </div>
         </div>
@@ -253,7 +255,7 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Stock Quantity</label>
-                        <input type="number" class="form-input" name="stock_quantity" id="editRawMaterialStock" min="0" required>
+                        <input type="number" step="0.01" class="form-input" name="stock_quantity" id="editRawMaterialStock" min="0" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Location</label>
@@ -436,37 +438,44 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
             const nextRawImage = document.getElementById('nextRawImage');
 
             function openViewRawMaterialModal(material) {
-                document.getElementById('rawMaterialName').textContent = material.name;
-                document.getElementById('rawMaterialCode').textContent = material.code_color;
-                document.getElementById('rawMaterialStock').textContent = material.stock_quantity;
-                document.getElementById('rawMaterialLocation').textContent = material.location;
-                document.getElementById('rawMaterialStatus').textContent = material.status;
+                document.getElementById('viewRawMaterialName').textContent = material.name;
+                document.getElementById('viewRawMaterialCode').textContent = material.code_color;
+                document.getElementById('viewRawMaterialStock').textContent = material.stock_quantity;
+                document.getElementById('viewRawMaterialLocation').textContent = material.location;
+                document.getElementById('viewRawMaterialStatus').innerHTML = material.status; // Use innerHTML to preserve badge
                 // Images
                 rawMaterialImageSlider.innerHTML = '';
                 let currentImage = 0;
-                material.images.forEach((img, idx) => {
-                    const imgTag = document.createElement('img');
-                    imgTag.src = img;
-                    imgTag.className = 'slider-img';
-                    imgTag.style.opacity = idx === 0 ? '1' : '0';
-                    imgTag.style.zIndex = idx === 0 ? '2' : '1';
-                    rawMaterialImageSlider.appendChild(imgTag);
-                });
+                const images = material.images.filter(img => img); // Filter out empty image paths
+                
+                if (images.length > 0) {
+                    images.forEach((img, idx) => {
+                        const imgTag = document.createElement('img');
+                        imgTag.src = img;
+                        imgTag.className = 'slider-img';
+                        imgTag.style.display = idx === 0 ? 'block' : 'none';
+                        rawMaterialImageSlider.appendChild(imgTag);
+                    });
+                } else {
+                    rawMaterialImageSlider.innerHTML = '<p style="text-align:center;color:#888;">No images available</p>';
+                }
+
+
                 function showImage(idx) {
                     const imgs = rawMaterialImageSlider.querySelectorAll('img');
                     imgs.forEach((img, i) => {
-                        img.style.opacity = i === idx ? '1' : '0';
-                        img.style.zIndex = i === idx ? '2' : '1';
+                        img.style.display = i === idx ? 'block' : 'none';
                     });
                 }
+
                 prevRawImage.onclick = function() {
-                    if (material.images.length === 0) return;
-                    currentImage = (currentImage - 1 + material.images.length) % material.images.length;
+                    if (images.length <= 1) return;
+                    currentImage = (currentImage - 1 + images.length) % images.length;
                     showImage(currentImage);
                 };
                 nextRawImage.onclick = function() {
-                    if (material.images.length === 0) return;
-                    currentImage = (currentImage + 1) % material.images.length;
+                    if (images.length <= 1) return;
+                    currentImage = (currentImage + 1) % images.length;
                     showImage(currentImage);
                 };
                 showImage(0);
@@ -488,15 +497,14 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 btn.addEventListener('click', function() {
                     const row = this.closest('tr');
                     const material = {
-                        name: row.children[1].textContent,
-                        code_color: row.children[2].textContent,
-                        stock_quantity: row.children[3].textContent,
-                        location: row.children[4].textContent,
-                        status: row.children[5].textContent,
+                        name: row.cells[1].textContent,
+                        code_color: row.cells[2].textContent,
+                        stock_quantity: row.cells[3].textContent,
+                        location: row.cells[4].textContent,
+                        status: row.cells[5].innerHTML,
                         images: []
                     };
                     // Get image filenames from data attributes
-                    material.images = [];
                     if (row.dataset.image1) material.images.push('images/' + row.dataset.image1);
                     if (row.dataset.image2) material.images.push('images/' + row.dataset.image2);
                     if (row.dataset.image3) material.images.push('images/' + row.dataset.image3);
@@ -512,9 +520,8 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 document.getElementById('editRawMaterialId').value = material.id;
                 document.getElementById('editRawMaterialName').value = material.name;
                 document.getElementById('editRawMaterialCodeColor').value = material.code_color;
-                document.getElementById('editRawMaterialStock').value = material.stock_quantity;
+                document.getElementById('editRawMaterialStock').value = material.stock_quantity.replace(/,/g, ''); // Remove commas
                 document.getElementById('editRawMaterialLocation').value = material.location_id;
-                // Optionally, you can show static previews of current images here if desired
                 editRawMaterialModal.style.display = 'block';
             }
             if (closeEditRawMaterialModal && editRawMaterialModal) {
@@ -538,11 +545,11 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
                 btn.addEventListener('click', function() {
                     const row = this.closest('tr');
                     const material = {
-                        id: row.children[0].textContent.trim(),
-                        name: row.children[1].textContent.trim(),
-                        code_color: row.children[2].textContent.trim(),
-                        stock_quantity: row.children[3].textContent.trim(),
-                        location: row.children[4].textContent.trim(),
+                        id: this.getAttribute('data-raw-id'), // Correctly get ID from button
+                        name: row.cells[1].textContent.trim(),
+                        code_color: row.cells[2].textContent.trim(),
+                        stock_quantity: row.cells[3].textContent.trim(),
+                        location: row.cells[4].textContent.trim(),
                         location_id: row.getAttribute('data-location-id'),
                         images: []
                     };
@@ -552,4 +559,4 @@ $locations_result = $conn->query("SELECT id, name FROM locations ORDER BY name")
         });
     </script>
 </body>
-</html> 
+</html>
