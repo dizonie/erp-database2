@@ -8,15 +8,17 @@ require_once 'db_connect.php';
 // Fetch user details from session for display.
 $username = htmlspecialchars($_SESSION['username']);
 $role = htmlspecialchars($_SESSION['role']);
-// Fetch All Transactions for the Transactions Module
+
+// --- FIX: Corrected the SQL query to use 'product_materials' table instead of 'products' ---
 $all_transactions_sql = "
     SELECT t.transaction_date, rm.name as material_name, p.name as product_name, t.type, t.quantity, l.name as location_name, t.balance
     FROM transactions t
-    JOIN raw_materials rm ON t.raw_material_id = rm.id
-    LEFT JOIN products p ON t.product_id = p.id
-    JOIN locations l ON t.location_id = l.id
+    LEFT JOIN raw_materials rm ON t.raw_material_id = rm.id
+    LEFT JOIN product_materials p ON t.product_id = p.product_id
+    LEFT JOIN locations l ON t.location_id = l.id
     ORDER BY t.transaction_date DESC";
 $all_transactions_result = $conn->query($all_transactions_sql);
+
 // For filters
 $raw_materials_for_modals = $conn->query("SELECT id, name, code_color FROM raw_materials ORDER BY name");
 ?>
@@ -178,7 +180,7 @@ $raw_materials_for_modals = $conn->query("SELECT id, name, code_color FROM raw_m
                                         echo "</tr>";
                                     }
                                 } else {
-                                    echo "<tr><td colspan='7' style='text-align:center;'>No transactions found.</td></tr>";
+                                    echo "<tr><td colspan='8' style='text-align:center;'>No transactions found.</td></tr>";
                                 }
                                 ?>
                             </tbody>
@@ -227,10 +229,11 @@ $raw_materials_for_modals = $conn->query("SELECT id, name, code_color FROM raw_m
                         </div>
                         <div class="form-group">
                             <label for="transProduct">Product Used</label>
+                            <!-- --- FIX: Query 'product_materials' table and use 'product_id' for the value --- -->
                             <select id="transProduct" name="product_id" class="form-input">
                                 <option value="">Select Product (if applicable)</option>
-                                <?php $products = $conn->query("SELECT id, name FROM products ORDER BY name"); while ($row = $products->fetch_assoc()): ?>
-                                    <option value="<?= htmlspecialchars($row['id']) ?>"><?= htmlspecialchars($row['name']) ?></option>
+                                <?php $products = $conn->query("SELECT product_id, name FROM product_materials ORDER BY name"); while ($row = $products->fetch_assoc()): ?>
+                                    <option value="<?= htmlspecialchars($row['product_id']) ?>"><?= htmlspecialchars($row['name']) ?></option>
                                 <?php endwhile; ?>
                             </select>
                         </div>
@@ -270,7 +273,6 @@ $raw_materials_for_modals = $conn->query("SELECT id, name, code_color FROM raw_m
             </div>
         </div>
     </div>
-    <!-- Transactions-specific modals go here -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="script.js"></script>
     <script>
@@ -311,4 +313,4 @@ $raw_materials_for_modals = $conn->query("SELECT id, name, code_color FROM raw_m
         });
     </script>
 </body>
-</html> 
+</html>
