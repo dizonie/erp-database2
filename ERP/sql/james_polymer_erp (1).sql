@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 21, 2025 at 05:39 AM
+-- Generation Time: Jul 21, 2025 at 10:09 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -101,8 +101,8 @@ INSERT INTO `raw_materials` (`id`, `code_color`, `name`, `category_id`, `locatio
 (2, 'NY-002 (Black)', 'NYLON', 1, 1, 0.00, 'Out of Stock', '2025-07-21 03:20:37', '2025-07-21 03:20:37', NULL, NULL, NULL),
 (3, 'ABS-003 (White)', 'ABS', 1, 2, 2000.00, 'Normal', '2025-07-21 03:20:37', '2025-07-21 03:27:02', NULL, NULL, NULL),
 (4, 'PS-004 (Clear)', 'POLYSTYRENE CLEAR', 1, 2, 500.00, 'Critical', '2025-07-21 03:20:37', '2025-07-21 03:27:02', NULL, NULL, NULL),
-(5, 'HIPS-005 (White)', 'HIPS H-IMPACT', 1, 1, 0.00, 'Out of Stock', '2025-07-21 03:20:37', '2025-07-21 03:20:37', NULL, NULL, NULL),
-(6, 'RM-007 Brown', 'Kahoy', 1, 2, 12.00, 'Critical', '2025-07-21 03:20:37', '2025-07-21 03:27:02', NULL, NULL, NULL),
+(5, 'HIPS-005 (White)', 'HIPS H-IMPACT', 1, 1, 3.00, 'Critical', '2025-07-21 03:20:37', '2025-07-21 05:00:56', NULL, NULL, NULL),
+(6, 'RM-007 Brown', 'Kahoy', 1, 2, 4.00, 'Critical', '2025-07-21 03:20:37', '2025-07-21 04:01:16', NULL, NULL, NULL),
 (8, 'RM-008 Yellow', 'Straw', 1, 3, 50.00, 'Critical', '2025-07-21 03:20:37', '2025-07-21 03:27:02', 'matimg_6879cd8aa399c.png', 'matimg_6879cd8aa3c06.png', 'matimg_6879cd8aa6e0c.png');
 
 -- --------------------------------------------------------
@@ -134,7 +134,10 @@ INSERT INTO `transactions` (`id`, `transaction_id_str`, `raw_material_id`, `prod
 (2, 'TRX-2025-0529-001', 5, 5, 1, 'OUT', 6.00, 1, 4.00, NULL, '2025-05-29 11:00:00'),
 (3, 'TRX-2025-0528-001', 5, 5, 1, 'OUT', 5.00, 1, 10.00, NULL, '2025-05-28 14:00:00'),
 (4, 'TRX-2025-0527-001', 2, 2, 1, 'OUT', 1.00, 1, 1.00, NULL, '2025-05-27 09:30:00'),
-(5, 'TRX-2025-0527-002', 5, 5, 1, 'OUT', 4.00, 1, 70.00, NULL, '2025-05-27 16:00:00');
+(5, 'TRX-2025-0527-002', 5, 5, 1, 'OUT', 4.00, 1, 70.00, NULL, '2025-05-27 16:00:00'),
+(6, 'TRX-20250721-060116-380', 6, 2, 1, 'IN', 2.00, 3, 2.00, '', '2025-07-18 00:00:00'),
+(7, 'TRX-20250721-060116-961', 6, 2, 1, 'IN', 2.00, 3, 4.00, '', '2025-07-18 00:00:00'),
+(8, 'TRX-20250721-070056-843', 5, 2, 1, 'IN', 3.00, 1, 3.00, '', '2025-07-23 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -222,7 +225,7 @@ ALTER TABLE `raw_materials`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`
